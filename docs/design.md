@@ -176,7 +176,7 @@ The dashboard has grown beyond the original single-page overview:
 | Overview | `docs/index.html`, `docs/dashboard.js` | Core SDLC metrics, community, rework, failures |
 | Drill-down | `docs/details.html` | Per-day detail view (linked from overview charts) |
 | Delivered PR types | `docs/delivered-pr-types.html` | Conventional-commit mix + fix-filer attribution |
-| Quality signals | `docs/quality.html`, `docs/quality.js` | Defect-labeled and revert-event rates |
+| Quality signals | `docs/quality.html`, `docs/quality.js` | Defect-labeled and revert-event rates, 30-day escaped-fix rate |
 
 **Navigation:** `index.html`, `delivered-pr-types.html`, and `quality.html` share a tab header. `details.html` is a drill-down page reached from overview charts, not a peer tab.
 
@@ -215,3 +215,28 @@ splitting, issue-reference parsing, per-issue author caching, and per-(date,
 repo) writes; the Quality Signals collector correlates PR details with issue
 labels and commit/PR history, including same-PR revert cleanup. Python is
 available on Actions runners without extra setup.
+
+### Escaped-fix collector
+
+The 30-day escaped-fix rate asks, per week of merged PRs, how many needed a fix
+from a later PR within 30 days:
+
+- `docs/fix-candidates.csv` — later PR → earlier PR pairs found by naming
+  (`#N`, `owner/repo#N`, PR links, in the later PR or the issue it closes),
+  causal wording, or reverts; pairs more than 30 days apart are dropped
+- `docs/fix-judgments.csv` — one verdict per pair; new pairs start `unjudged`
+- `docs/escaped-fixes.csv` — weekly rows per repo and PR type (`all` = every
+  type), only for weeks whose 30-day window has closed; merged-PR counts and
+  types come from `docs/pr-type-details.csv`
+- `scripts/collect-escaped-fixes.sh` + `scripts/collect-escaped-fixes.py` —
+  daily collection (wired after PR types in `collect.yml`);
+  `scripts/backfill-escaped-fixes.sh` for a date range
+
+Detection is deliberately split from judging. An offline replay of 2,233
+merged PRs judged 1,089 candidate pairs from the code: a named reference with
+causal wording was a real fix 66% of the time, a named reference alone 29%,
+causal wording alone 37%, and a shared changed file 10%. The shared-file
+source is left out (too noisy to judge daily), which makes the rate a lower
+bound. The replay's verdicts seed `fix-judgments.csv`; new pairs are judged
+by the optional `FIX_JUDGE_CMD` hook or by hand. No model provider or secret
+is built in.

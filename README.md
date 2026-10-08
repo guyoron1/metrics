@@ -43,3 +43,28 @@ preventability or distinguish a review-escaped bug from a missed requirement.
 These are leading indicators, not DORA Change Failure Rate. DORA requires
 production deployment and rollback/hotfix evidence. The daily workflow derives
 `docs/quality.csv` from the PR-type datasets and GitHub issue/commit metadata.
+
+### 30-day escaped-fix rate
+
+Also on the Quality Signals tab: of the PRs merged in a week, the share that a
+later PR had to fix within 30 days. Weeks appear once their 30-day window has
+closed.
+
+| File | Purpose |
+|------|---------|
+| `docs/fix-candidates.csv` | Later PR → earlier PR pairs: the later PR (or the issue it closes) names the earlier PR, uses causal wording ("broke", "regression", "caused by", "introduced in"), or reverts it |
+| `docs/fix-judgments.csv` | Verdict per pair (`defect_from_original`, `later_change`, `not_related`, `unknown`, or `unjudged`); seeded from an offline replay, editable by hand |
+| `docs/escaped-fixes.csv` | Per week × repo × PR type: merged PRs, PRs with a confirmed fix, severe, unjudged candidates, rate |
+| `scripts/collect-escaped-fixes.sh` | Daily (wired into `.github/workflows/collect.yml`, after PR types) |
+| `scripts/backfill-escaped-fixes.sh` | Date-range backfill; keeps existing judgments |
+
+Only `defect_from_original` counts. Detection alone is noisy (a named reference
+is a real fix about a third of the time), so each pair needs a verdict. To
+judge new pairs automatically, set `FIX_JUDGE_CMD` to a command that reads the
+pair and both diffs as JSON on stdin and prints
+`{"verdict": ..., "severity": ..., "judged_by": ...}`; unset, nothing is judged
+and pairs stay `unjudged`. After editing judgments by hand, recompute with
+`python3 scripts/collect-escaped-fixes.py --rebuild`.
+
+The rate is a lower bound: fixes that never mention the earlier PR are missed.
+Verdicts are AI judgments unless `judged_by` names a person.

@@ -11,7 +11,7 @@
   <header class="page-header">
     <div>
       <h1>fullsend-ai metrics</h1>
-      <p class="subtitle">Defect-label and Git-revert signals across fullsend + agents</p>
+      <p class="subtitle">Defect-label, Git-revert and escaped-fix signals across fullsend + agents</p>
     </div>
     <nav class="page-tabs" aria-label="Dashboard sections">
       <a href="index.html">Overview</a>
@@ -52,6 +52,23 @@
     <h2>30-day windows</h2>
     <div class="quality-row"><span></span><strong>Defect rate</strong><strong>Revert rate</strong><strong>Merged</strong></div>
     <div id="breakdown"></div>
+  </div>
+
+  <div class="chart-section chart-tall">
+    <h2>30-day escaped-fix rate</h2>
+    <p class="subtitle">Weekly, by merge week of the earlier PR · a week appears once its 30-day window has closed</p>
+    <div class="stat-hero" id="escaped-hero"></div>
+    <div id="chart-escaped"></div>
+  </div>
+
+  <div class="quality-definition card">
+    <strong>Escaped-fix rate:</strong> of the PRs merged in a week, the share that a later PR had to fix within 30 days. A later PR becomes a candidate when it, or the issue it closes, names the earlier PR (<code>#N</code> or a link), uses causal wording (<code>broke</code>, <code>regression</code>, <code>caused by</code>, <code>introduced in</code>), or reverts it. A candidate counts only after a judge confirmed that it fixes a mistake the earlier PR made (<code>defect_from_original</code>), not a planned follow-up. Severe = a fix judged high severity. Caveats: this is a lower bound, because fixes that never mention the earlier PR are missed (an offline replay found more than a third of real fixes only through shared files). Verdicts are AI judgments unless <code>judged_by</code> in <code>fix-judgments.csv</code> names a person, and anyone can correct a row there. Unjudged candidates are shown so you can see how complete a week is.
+  </div>
+
+  <div class="quality-breakdown card">
+    <h2>Escaped-fix rate by PR type (all closed weeks)</h2>
+    <div class="quality-row"><span></span><strong>Escaped-fix rate</strong><strong>Fixed (severe)</strong><strong>Merged</strong></div>
+    <div id="escaped-types"></div>
   </div>
 
   <div class="tooltip" id="tooltip"></div>
